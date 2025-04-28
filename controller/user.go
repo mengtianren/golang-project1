@@ -40,6 +40,11 @@ func (User) Login(c *gin.Context) {
 		roles = append(roles, int(role.ID))
 
 	}
+	if user.ID == 0 {
+		utils.ResponseError(c, 0, "系统错误")
+		return
+	}
+
 	fmt.Println(roles)
 	token, err1 := utils.GenerateJWT(user.ID, user.Name, user.Phone, roles)
 	if err1 != nil {
