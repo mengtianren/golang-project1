@@ -14,5 +14,6 @@ func InitAdminRoute(r *gin.Engine) {
 		})
 		router.POST("/add", controller.Admin{}.AddUser)
 		router.DELETE("/del", controller.Admin{}.DeleteUser)
+		router.GET("/list", controller.Admin{}.GetUserList)
 	}
 }

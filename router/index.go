@@ -10,7 +10,7 @@ import (
 // InitRouter 初始化路由
 func InitRouter() {
 	router := gin.Default()
-	router.Use(middleware.JWTAuthMiddleware()) // 日志中间件
+	router.Use(middleware.JWTAuthMiddleware()) //认证
 
 	InitPubicRoute(router)
 	InitUserRoute(router)

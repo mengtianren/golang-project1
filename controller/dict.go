@@ -14,10 +14,14 @@ type AddDictRequest struct {
 	Type   string `json:"type" binding:"required"`   // 必填字段
 }
 type UpdateDictRequest struct {
-	ID     int    `json:"id" binding:"required"` // 必填字段
+	ID     uint   `json:"id" binding:"required"` // 必填字段
 	Keyy   string `json:"keyy" `
 	Valuee string `json:"valuee"`
 	Type   string `json:"type" `
+}
+
+type dictType struct {
+	Type string `json:"type" binding:"required"` // 必填字段
 }
 
 type Dict struct{}
@@ -34,9 +38,17 @@ func (Dict) GetAll(c *gin.Context) {
 
 // 根据type 获取字典列表
 func (Dict) GetByType(c *gin.Context) {
-	dictType := c.DefaultQuery("type", "")
+	var query dictType
+
+	err := c.ShouldBind(&query)
+	if err != nil {
+		utils.ResponseError(c, 0, err.Error())
+		return
+	}
+	queryType := query.Type
+
 	dictList := []model.Dict{}
-	model.DB.Where("type = ?", dictType).Find(&dictList)
+	model.DB.Where("type = ?", queryType).Find(&dictList)
 	utils.ResponseSuccess(c, dictList)
 }
 

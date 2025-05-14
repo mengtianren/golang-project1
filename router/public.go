@@ -9,5 +9,6 @@ import (
 func InitPubicRoute(router *gin.Engine) {
 
 	router.POST("/login", controller.User{}.Login)
+	router.POST("/register", controller.User{}.Register)
 
 }

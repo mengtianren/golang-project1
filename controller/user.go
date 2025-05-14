@@ -16,6 +16,13 @@ type Login struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type Register struct {
+	Phone    string `json:"phone" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	Name     string `json:"name" binding:"required"`
+	Roles    []uint `json:"roles"` // 角色列表
+}
+
 func (User) Login(c *gin.Context) {
 	var data Login
 	if err := c.ShouldBindJSON(&data); err != nil {
@@ -46,7 +53,7 @@ func (User) Login(c *gin.Context) {
 	}
 
 	fmt.Println(roles)
-	token, err1 := utils.GenerateJWT(user.ID, user.Name, user.Phone, roles)
+	token, err1 := utils.GenerateJWT(int(user.ID), user.Name, user.Phone, roles)
 	if err1 != nil {
 		utils.ResponseError(c, 0, "登录失败")
 		return
@@ -58,6 +65,34 @@ func (User) Login(c *gin.Context) {
 		"userInfo": user,
 		"token":    token,
 	})
+
+}
+
+func (User) Register(c *gin.Context) {
+	var data Register
+	err := c.ShouldBind(&data)
+	if err != nil {
+		utils.ResponseError(c, 0, "参数错误")
+		return
+	}
+	var roles []model.Role
+
+	err2 := model.DB.Where("id in ?", data.Roles).Find(&roles).Error
+	fmt.Println(roles, data.Roles)
+	if err2 != nil {
+		utils.ResponseError(c, 0, err2.Error())
+		return
+
+	}
+
+	var user = model.User{Name: data.Name, Phone: data.Phone, Password: data.Password, Roles: roles}
+
+	err1 := model.DB.Create(&user).Error
+	if err1 != nil {
+		utils.ResponseError(c, 0, err1.Error())
+		return
+	}
+	utils.ResponseSuccess(c, "注册成功")
 
 }
 
