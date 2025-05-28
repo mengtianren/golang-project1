@@ -14,11 +14,14 @@ func init() {
 
 	dsn := "root:mengtianren@mysql@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-		QueryFields: true,
+		QueryFields:            true,
+		SkipDefaultTransaction: true,
 	})
 	if err != nil {
 		fmt.Println("数据库连接失败")
 		return
 	}
+	DB.AutoMigrate(&User{}, &Role{}, &Menu{}, &Dict{})
+
 	fmt.Println("数据库连接成功")
 }

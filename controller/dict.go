@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"project1/model"
 	"project1/utils"
 
@@ -28,11 +27,13 @@ type Dict struct{}
 
 // GetAll 获取字典数据
 func (Dict) GetAll(c *gin.Context) {
-	dictList := []model.Dict{}
-	model.DB.Find(&dictList)
-	user, _ := c.Get("user")
-	fmt.Println(user)
-	utils.ResponseSuccess(c, dictList)
+	tx := model.DB.Model(&model.Dict{})
+	result, err := utils.NewPagedResult(c, tx, []model.Dict{})
+	if err != nil {
+		utils.ResponseError(c, 0, err.Error())
+		return
+	}
+	utils.ResponseSuccess(c, result)
 
 }
 

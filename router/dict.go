@@ -8,11 +8,12 @@ import (
 
 func InitDictRoute(r *gin.Engine) {
 	router := r.Group("/dict")
+	var dict controller.Dict
 	{
-		router.GET("/get/all", controller.Dict{}.GetAll)
-		router.GET("/get/type", controller.Dict{}.GetByType)
-		router.POST("/add", controller.Dict{}.AddDict)
-		router.POST("/edit", controller.Dict{}.UpdateDict)
-		router.DELETE("/del", controller.Dict{}.DeleteDict)
+		router.POST("/get/all", dict.GetAll)
+		router.GET("/get/type", dict.GetByType)
+		router.POST("/add", dict.AddDict)
+		router.POST("/edit", dict.UpdateDict)
+		router.DELETE("/del", dict.DeleteDict)
 	}
 }

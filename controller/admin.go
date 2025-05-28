@@ -6,23 +6,22 @@ import (
 	"project1/utils"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type addUserRequest struct {
-	Name     string       `json:"name" binding:"required"`     // 必填字段
-	Password string       `json:"password" binding:"required"` // 必填字段
-	Phone    string       `json:"phone" binding:"required"`
-	Roles    []model.Role `json:"roles" binding:"required"` // 角色列表
+	Name     string `json:"name" binding:"required"`     // 必填字段
+	Password string `json:"password" binding:"required"` // 必填字段
+	Phone    string `json:"phone" binding:"required"`
+	Roles    []uint `json:"roles" binding:"required"` // 角色列表
 }
 
 type DeleteUserRequest struct {
-	ID uint `form:"id" json:"id" binding:"required"`
+	ID uint `form:"id" json:"id" binding:"required" min:"1"`
 }
 type updateUserRequest struct {
-	ID    uint   `json:"id" binding:"required"`
-	Name  string `json:"name" binding:"required"` // 必填字段
-	Phone string `json:"phone" binding:"required"`
+	ID    uint   `json:"id" binding:"required" min:"1"` // 假设用户ID是必需的
+	Name  string `json:"name" `                         // 必填字段
+	Phone string `json:"phone"`
 	Roles []uint `json:"roles"` // 角色列表
 }
 type RoleDTO struct {
@@ -91,43 +90,22 @@ func (Admin) DeleteUser(c *gin.Context) {
 
 // 获取用户列表
 func (Admin) GetUserList(c *gin.Context) {
-
-	var users []model.User
-
-	err := model.DB.Preload("Roles", func(db *gorm.DB) *gorm.DB {
-		return db.Select("name", "type", "id") // 只查这两列
-	}).Find(&users).Error
+	tx := model.DB.Model(&model.User{})
+	result, err := utils.NewPagedResult(c, tx, []model.User{})
 	if err != nil {
 		utils.ResponseError(c, 0, err.Error())
 		return
 	}
-	// 转换为精简结构体
-	userList := []UserDTO{}
+	utils.ResponseSuccess(c, result)
 
-	for _, user := range users {
-		// 如果数据不存在返回 []
-		roles := []RoleDTO{}
-		// 如果数据不存在 返回 null
-		// var roles []RoleDTO
-		fmt.Println("roles", roles)
-		for _, role := range user.Roles {
-			roles = append(roles, RoleDTO{
-				Name: role.Name,
-				Type: role.Type,
-			})
-		}
-		userList = append(userList, UserDTO{
-			ID:    user.ID,
-			Name:  user.Name,
-			Phone: user.Phone,
-			Roles: roles,
-		})
-
-	}
-
-	utils.ResponseSuccess(c, userList)
 }
 
+/**
+ * @api {get} /api/admin/user/edit 编辑用户信息
+ * @apiName EditUserInfo
+ * @apiGroup Admin
+ * @apiParam {Number} id 用户ID
+ */
 func (Admin) UpdateUser(c *gin.Context) {
 	var query updateUserRequest
 	err := c.ShouldBind(&query)
@@ -135,6 +113,21 @@ func (Admin) UpdateUser(c *gin.Context) {
 		utils.ResponseError(c, 0, err.Error())
 		return
 	}
+	var user = model.User{
+		ID: query.ID,
+	}
+	user_err := model.DB.Find(&user).Error
+	if user_err != nil {
+		utils.ResponseError(c, 0, "用户不存在")
+		return
+	}
+	if query.Name != "" {
+		user.Name = query.Name
+	}
+	if query.Phone != "" {
+		user.Phone = query.Phone
+	}
+
 	var roles []model.Role
 	err1 := model.DB.Where("id in ?", query.Roles).Find(&roles).Error
 	if err1 != nil {
@@ -142,12 +135,13 @@ func (Admin) UpdateUser(c *gin.Context) {
 		return
 
 	}
-
-	var user = model.User{
-		ID:    query.ID,
-		Name:  query.Name,
-		Phone: query.Phone,
-		Roles: roles,
+	if len(roles) > 0 {
+		role_err := model.DB.Model(&user).Association("Roles").Clear()
+		if role_err != nil {
+			utils.ResponseError(c, 0, role_err.Error())
+			return
+		}
+		user.Roles = roles
 	}
 
 	err2 := model.DB.Save(&user).Error

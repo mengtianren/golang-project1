@@ -27,3 +27,9 @@ func ResponseError(c *gin.Context, code int, msg string) {
 	})
 	c.Abort() // 阻断后续处理
 }
+
+// func ResponsePage(c *gin.Context, data interface{}, total int64) {
+// 	ResponseSuccess(c, gin.H{
+// 		"list":  data,
+// 	})
+// }

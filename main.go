@@ -5,6 +5,8 @@ import (
 )
 
 func main() {
-	router.InitRouter()
+	r := router.InitRouter()
+
+	r.Run(":8088")
 
 }

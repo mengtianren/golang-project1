@@ -8,12 +8,15 @@ import (
 
 func InitAdminRoute(r *gin.Engine) {
 	router := r.Group("/admin")
+	adminController := controller.Admin{}
 	{
-		router.GET("/get", func(c *gin.Context) {
-			c.String(200, "get admin")
-		})
-		router.POST("/add", controller.Admin{}.AddUser)
-		router.DELETE("/del", controller.Admin{}.DeleteUser)
-		router.GET("/list", controller.Admin{}.GetUserList)
+		userR := router.Group("/user")
+		{
+			userR.POST("/add", adminController.AddUser)
+			userR.DELETE("/del", adminController.DeleteUser)
+			userR.POST("/list", adminController.GetUserList)
+			userR.PUT("/edit", adminController.UpdateUser)
+		}
+
 	}
 }
