@@ -13,20 +13,20 @@ type AddDictRequest struct {
 	Type   string `json:"type" binding:"required"`   // 必填字段
 }
 type UpdateDictRequest struct {
-	ID     uint   `json:"id" binding:"required"` // 必填字段
+	ID     uint   `json:"id" binding:"required" min:"1"` // 必填字段
 	Keyy   string `json:"keyy" `
 	Valuee string `json:"valuee"`
 	Type   string `json:"type" `
 }
 
-type dictType struct {
-	Type string `json:"type" binding:"required"` // 必填字段
+type SearchDictRequest struct {
+	Type string `json:"type" form:"type"` // 必填字段
 }
 
 type Dict struct{}
 
-// GetAll 获取字典数据
-func (Dict) GetAll(c *gin.Context) {
+// 获取字典分页
+func (Dict) GetPage(c *gin.Context) {
 	tx := model.DB.Model(&model.Dict{})
 	result, err := utils.NewPagedResult(c, tx, []model.Dict{})
 	if err != nil {
@@ -38,42 +38,53 @@ func (Dict) GetAll(c *gin.Context) {
 }
 
 // 根据type 获取字典列表
-func (Dict) GetByType(c *gin.Context) {
-	var query dictType
-
+func (Dict) GetList(c *gin.Context) {
+	var query SearchDictRequest
 	err := c.ShouldBind(&query)
 	if err != nil {
 		utils.ResponseError(c, 0, err.Error())
 		return
 	}
-	queryType := query.Type
-
+	tx := model.DB.Model(&model.Dict{})
+	if query.Type != "" {
+		tx = tx.Where("type =?", query.Type)
+	}
 	dictList := []model.Dict{}
-	model.DB.Where("type = ?", queryType).Find(&dictList)
+	tx.Find(&dictList)
 	utils.ResponseSuccess(c, dictList)
 }
 
 // 更新字典数据
-func (Dict) UpdateDict(c *gin.Context) {
+func (Dict) EditItem(c *gin.Context) {
 	var data UpdateDictRequest
 	if err := c.ShouldBindJSON(&data); err != nil {
 		utils.ResponseError(c, 0, err.Error())
 		return
 	}
-	dict := model.Dict{
-		ID:     data.ID,
-		Type:   data.Type,
-		Valuee: data.Valuee,
-		Keyy:   data.Keyy,
+	dict := model.Dict{}
+	err := model.DB.Where("id =?", data.ID).First(&dict).Error
+	if err != nil {
+		utils.ResponseError(c, 0, "字典不存在")
+		return
 	}
+	if data.Keyy != "" {
+		dict.Keyy = data.Keyy
+	}
+	if data.Valuee != "" {
+		dict.Valuee = data.Valuee
+	}
+	if data.Type != "" {
+		dict.Type = data.Type
+	}
+
 	model.DB.Save(&dict)
 	utils.ResponseSuccess(c, dict)
 
 }
 
-func (Dict) AddDict(c *gin.Context) {
+func (Dict) AddItem(c *gin.Context) {
 	var data AddDictRequest
-	if err := c.ShouldBindJSON(&data); err != nil {
+	if err := c.ShouldBind(&data); err != nil {
 		utils.ResponseError(c, 0, err.Error())
 		return
 	}
@@ -83,18 +94,24 @@ func (Dict) AddDict(c *gin.Context) {
 		Type:   data.Type,
 	}
 
-	err := model.DB.Create(&dict)
+	err1 := model.DB.Where("keyy =? AND valuee=? AND type=?", data.Keyy, data.Valuee, data.Type).First(&dict).Error
+	if err1 == nil {
+		utils.ResponseError(c, 0, "字典已存在")
+		return
+	}
+
+	err := model.DB.Create(&dict).Error
 	if err != nil {
 		utils.ResponseError(c, 0, "添加失败")
 	} else {
-		utils.ResponseSuccess(c, err)
+		utils.ResponseSuccess(c, dict)
 
 	}
 
 }
 
 // 删除字典数据
-func (Dict) DeleteDict(c *gin.Context) {
+func (Dict) DelItem(c *gin.Context) {
 	id := c.Query("id")
 	if id == "" {
 		utils.ResponseError(c, 0, "id不能为空")

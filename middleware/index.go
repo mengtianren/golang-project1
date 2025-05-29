@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"project1/utils"
 	"strings"
@@ -54,7 +53,6 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			utils.ResponseError(c, http.StatusUnauthorized, "无效的Token，请重新登录")
 		}
 		c.Set("user", user) // 将用户信息存入上下文中，供后续处理使用
-		fmt.Println(user)
 		// token校验通过，继续执行
 		c.Next()
 	}
