@@ -10,9 +10,9 @@ import (
 func ResponseSuccess(c *gin.Context, data interface{}) {
 
 	c.JSON(http.StatusOK, gin.H{
-		"code": http.StatusOK,
-		"msg":  "操作成功",
-		"data": data,
+		"code":   http.StatusOK,
+		"msg":    "操作成功",
+		"result": data,
 	})
 }
 

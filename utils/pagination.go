@@ -10,28 +10,30 @@ import (
 
 // Pagination 分页结构体
 type Pagination struct {
-	Page     int    `form:"page,default=1" json:"page"`
-	PageSize int    `form:"page_size,default=10" json:"page_size"`
-	Sort     string `form:"sort,default=id desc" json:"sort"` // 新增排序字段
+	Page struct {
+		Page int `form:"page,default=1" json:"page"`
+		Size int `form:"size,default=10" json:"size"`
+	} `json:"page"`
+	Sort string `form:"sort,default=id desc" json:"sort"` // 新增排序字段
 }
 
 // GetOffset 计算偏移量
 func (p *Pagination) GetOffset() int {
-	if p.Page <= 0 {
-		p.Page = 1
+	if p.Page.Page <= 0 {
+		p.Page.Page = 1
 	}
-	return (p.Page - 1) * p.PageSize
+	return (p.Page.Page - 1) * p.Page.Size
 }
 
 // GetLimit 获取每页数量
 func (p *Pagination) GetLimit() int {
-	if p.PageSize <= 0 {
-		p.PageSize = 10
+	if p.Page.Size <= 0 {
+		p.Page.Size = 10
 	}
-	if p.PageSize > 100 {
-		p.PageSize = 100
+	if p.Page.Size > 100 {
+		p.Page.Size = 100
 	}
-	return p.PageSize
+	return p.Page.Size
 }
 
 // GetTotal 获取总记录数
@@ -46,7 +48,7 @@ func (p *Pagination) GetTotalPages(total int64) int {
 	if total == 0 {
 		return 1
 	}
-	return int(math.Ceil(float64(total) / float64(p.PageSize)))
+	return int(math.Ceil(float64(total) / float64(p.Page.Size)))
 }
 
 // Paginate 分页查询作用域
@@ -60,10 +62,10 @@ func (p *Pagination) Paginate() func(db *gorm.DB) *gorm.DB {
 
 // PagedResult 分页结果结构体
 type PagedResult struct {
-	Data       interface{} `json:"data"`
+	Records    interface{} `json:"records"`
 	Total      int64       `json:"total"`
 	Page       int         `json:"page"`
-	PageSize   int         `json:"page_size"`
+	Size       int         `json:"page_size"`
 	TotalPages int         `json:"total_pages"`
 }
 
@@ -82,10 +84,11 @@ func NewPagedResult(c *gin.Context, db *gorm.DB, result interface{}) (*PagedResu
 	}
 
 	return &PagedResult{
-		Data:       result,
-		Total:      total,
-		Page:       pagination.Page,
-		PageSize:   pagination.PageSize,
-		TotalPages: pagination.GetTotalPages(total),
+		Records: result,
+		Total:   total,
+		Page:    pagination.Page.Page,
+		Size:    pagination.Page.Size,
 	}, nil
 }
+
+// 定义嵌套的分页参数结构体
